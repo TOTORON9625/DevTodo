@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevTodo - 個人開発者のためのタスク管理</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- サイドバー -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="material-icons">task_alt</span>
+                    <h1>DevTodo</h1>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="tasks" data-filter="">
+                    <span class="material-icons">inbox</span>
+                    <span>すべてのタスク</span>
+                </button>
+                <button class="nav-item" data-view="tasks" data-filter="today">
+                    <span class="material-icons">today</span>
+                    <span>今日</span>
+                </button>
+                <button class="nav-item" data-view="tasks" data-filter="upcoming">
+                    <span class="material-icons">upcoming</span>
+                    <span>今後の予定</span>
+                </button>
+            </nav>
+            
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <h2>プロジェクト</h2>
+                    <button class="icon-btn" id="addProjectBtn" title="プロジェクトを追加">
+                        <span class="material-icons">add</span>
+                    </button>
+                </div>
+                <div class="project-list" id="projectList">
+                    <!-- プロジェクトがここに挿入される -->
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="section-header">
+                    <h2>タグ</h2>
+                    <button class="icon-btn" id="addTagBtn" title="タグを追加">
+                        <span class="material-icons">add</span>
+                    </button>
+                </div>
+                <div class="tag-list" id="tagList">
+                    <!-- タグがここに挿入される -->
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav sidebar-bottom">
+                <button class="nav-item" data-view="ideas">
+                    <span class="material-icons">lightbulb</span>
+                    <span>アイデアボックス</span>
+                </button>
+                <button class="nav-item" data-view="reports">
+                    <span class="material-icons">analytics</span>
+                    <span>レポート</span>
+                </button>
+            </nav>
+        </aside>
+        
+        <!-- メインコンテンツ -->
+        <main class="main-content">
+            <header class="main-header">
+                <button class="menu-btn" id="menuBtn">
+                    <span class="material-icons">menu</span>
+                </button>
+                <h2 id="viewTitle">すべてのタスク</h2>
+                <div class="header-actions">
+                    <button class="icon-btn" id="themeToggle" title="テーマを切り替え">
+                        <span class="material-icons">dark_mode</span>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- タスク表示 -->
+            <section class="content-section" id="tasksView">
+                <div class="task-header">
+                    <div class="status-tabs">
+                        <button class="status-tab active" data-status="">すべて</button>
+                        <button class="status-tab" data-status="todo">Todo</button>
+                        <button class="status-tab" data-status="in_progress">進行中</button>
+                        <button class="status-tab" data-status="done">完了</button>
+                    </div>
+                    <button class="fab" id="addTaskBtn">
+                        <span class="material-icons">add</span>
+                        <span>タスクを追加</span>
+                    </button>
+                </div>
+                <div class="task-list" id="taskList">
+                    <!-- タスクカードがここに挿入される -->
+                </div>
+                <div class="empty-state" id="emptyTasks" style="display: none;">
+                    <span class="material-icons">task_alt</span>
+                    <p>タスクがありません</p>
+                    <p class="subtitle">「タスクを追加」をクリックして始めましょう</p>
+                </div>
+            </section>
+            
+            <!-- アイデアボックス表示 -->
+            <section class="content-section" id="ideasView" style="display: none;">
+                <div class="ideas-header">
+                    <input type="text" class="search-input" id="ideaSearch" placeholder="アイデアを検索...">
+                    <button class="fab" id="addIdeaBtn">
+                        <span class="material-icons">add</span>
+                        <span>アイデアを追加</span>
+                    </button>
+                </div>
+                <div class="ideas-grid" id="ideaList">
+                    <!-- アイデアカードがここに挿入される -->
+                </div>
+                <div class="empty-state" id="emptyIdeas" style="display: none;">
+                    <span class="material-icons">lightbulb</span>
+                    <p>アイデアがありません</p>
+                    <p class="subtitle">新しいアイデアを記録しましょう</p>
+                </div>
+            </section>
+            
+            <!-- レポート表示 -->
+            <section class="content-section" id="reportsView" style="display: none;">
+                <div class="report-tabs">
+                    <button class="report-tab active" data-report="weekly">週次レポート</button>
+                    <button class="report-tab" data-report="monthly">月次レポート</button>
+                </div>
+                <div class="report-content" id="reportContent">
+                    <!-- レポートがここに挿入される -->
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- タスク追加/編集モーダル -->
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="taskModalTitle">タスクを追加</h3>
+                <button class="icon-btn modal-close" data-modal="taskModal">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <form id="taskForm">
+                <input type="hidden" id="taskId">
+                <div class="form-group">
+                    <label for="taskTitle">タイトル *</label>
+                    <input type="text" id="taskTitle" required placeholder="タスクのタイトルを入力">
+                </div>
+                <div class="form-group">
+                    <label for="taskDescription">説明</label>
+                    <textarea id="taskDescription" rows="3" placeholder="詳細な説明を追加"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskProject">プロジェクト</label>
+                        <select id="taskProject">
+                            <option value="">なし</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDueDate">期限</label>
+                        <input type="date" id="taskDueDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>色</label>
+                    <div class="color-picker" id="taskColorPicker">
+                        <button type="button" class="color-option selected" data-color="#6750A4"></button>
+                        <button type="button" class="color-option" data-color="#D32F2F"></button>
+                        <button type="button" class="color-option" data-color="#F57C00"></button>
+                        <button type="button" class="color-option" data-color="#FBC02D"></button>
+                        <button type="button" class="color-option" data-color="#388E3C"></button>
+                        <button type="button" class="color-option" data-color="#1976D2"></button>
+                        <button type="button" class="color-option" data-color="#7B1FA2"></button>
+                        <button type="button" class="color-option" data-color="#455A64"></button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>タグ</label>
+                    <div class="tag-selector" id="taskTagSelector">
+                        <!-- タグチップがここに挿入される -->
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="taskStatus">ステータス</label>
+                    <select id="taskStatus">
+                        <option value="todo">Todo</option>
+                        <option value="in_progress">進行中</option>
+                        <option value="done">完了</option>
+                        <option value="archived">アーカイブ</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-text" data-modal="taskModal">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- プロジェクト追加/編集モーダル -->
+    <div class="modal-overlay" id="projectModal">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h3 id="projectModalTitle">プロジェクトを追加</h3>
+                <button class="icon-btn modal-close" data-modal="projectModal">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <form id="projectForm">
+                <input type="hidden" id="projectId">
+                <div class="form-group">
+                    <label for="projectName">プロジェクト名 *</label>
+                    <input type="text" id="projectName" required placeholder="プロジェクト名を入力">
+                </div>
+                <div class="form-group">
+                    <label for="projectDescription">説明</label>
+                    <textarea id="projectDescription" rows="2" placeholder="プロジェクトの説明"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>色</label>
+                    <div class="color-picker" id="projectColorPicker">
+                        <button type="button" class="color-option selected" data-color="#6750A4"></button>
+                        <button type="button" class="color-option" data-color="#D32F2F"></button>
+                        <button type="button" class="color-option" data-color="#F57C00"></button>
+                        <button type="button" class="color-option" data-color="#FBC02D"></button>
+                        <button type="button" class="color-option" data-color="#388E3C"></button>
+                        <button type="button" class="color-option" data-color="#1976D2"></button>
+                        <button type="button" class="color-option" data-color="#7B1FA2"></button>
+                        <button type="button" class="color-option" data-color="#455A64"></button>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-text" data-modal="projectModal">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- タグ追加/編集モーダル -->
+    <div class="modal-overlay" id="tagModal">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h3 id="tagModalTitle">タグを追加</h3>
+                <button class="icon-btn modal-close" data-modal="tagModal">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <form id="tagForm">
+                <input type="hidden" id="tagId">
+                <div class="form-group">
+                    <label for="tagName">タグ名 *</label>
+                    <input type="text" id="tagName" required placeholder="タグ名を入力">
+                </div>
+                <div class="form-group">
+                    <label>色</label>
+                    <div class="color-picker" id="tagColorPicker">
+                        <button type="button" class="color-option selected" data-color="#6750A4"></button>
+                        <button type="button" class="color-option" data-color="#D32F2F"></button>
+                        <button type="button" class="color-option" data-color="#F57C00"></button>
+                        <button type="button" class="color-option" data-color="#FBC02D"></button>
+                        <button type="button" class="color-option" data-color="#388E3C"></button>
+                        <button type="button" class="color-option" data-color="#1976D2"></button>
+                        <button type="button" class="color-option" data-color="#7B1FA2"></button>
+                        <button type="button" class="color-option" data-color="#455A64"></button>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-text" data-modal="tagModal">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- アイデア追加/編集モーダル -->
+    <div class="modal-overlay" id="ideaModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="ideaModalTitle">アイデアを追加</h3>
+                <button class="icon-btn modal-close" data-modal="ideaModal">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <form id="ideaForm">
+                <input type="hidden" id="ideaId">
+                <div class="form-group">
+                    <label for="ideaTitle">タイトル *</label>
+                    <input type="text" id="ideaTitle" required placeholder="アイデアのタイトル">
+                </div>
+                <div class="form-group">
+                    <label for="ideaContent">内容</label>
+                    <textarea id="ideaContent" rows="6" placeholder="アイデアの詳細を記録..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>色</label>
+                    <div class="color-picker" id="ideaColorPicker">
+                        <button type="button" class="color-option selected" data-color="#6750A4"></button>
+                        <button type="button" class="color-option" data-color="#D32F2F"></button>
+                        <button type="button" class="color-option" data-color="#F57C00"></button>
+                        <button type="button" class="color-option" data-color="#FBC02D"></button>
+                        <button type="button" class="color-option" data-color="#388E3C"></button>
+                        <button type="button" class="color-option" data-color="#1976D2"></button>
+                        <button type="button" class="color-option" data-color="#7B1FA2"></button>
+                        <button type="button" class="color-option" data-color="#455A64"></button>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-text" data-modal="ideaModal">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 確認モーダル -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h3>確認</h3>
+                <button class="icon-btn modal-close" data-modal="confirmModal">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">この操作を実行しますか？</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-text" data-modal="confirmModal">キャンセル</button>
+                <button type="button" class="btn btn-danger" id="confirmBtn">削除</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- スナックバー -->
+    <div class="snackbar" id="snackbar"></div>
+    
+    <!-- Scripts -->
+    <script src="js/components.js"></script>
+    <script src="js/reports.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
