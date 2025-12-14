@@ -10,7 +10,7 @@ from flask_cors import CORS
 
 # 環境変数から設定を読み込み
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
-PORT = int(os.environ.get('PORT', 5000))
+PORT = int(os.environ.get('PORT', 8000))
 HOST = os.environ.get('HOST', '0.0.0.0')
 
 # Supabase設定（環境変数から読み込み、デフォルト値あり）
