@@ -27,44 +27,246 @@ st.set_page_config(
 )
 
 # ===================================
-# Custom CSS
+# Custom CSS - Material Design 3 Style
 # ===================================
 st.markdown("""
 <style>
-    /* Main Theme */
-    .main { padding: 1rem 2rem; }
+    /* ===================================
+       Material Design 3 Color System
+       =================================== */
+    :root {
+        --md-primary: #6750A4;
+        --md-secondary: #625B71;
+        --md-tertiary: #7D5260;
+        --md-surface: #FFFBFE;
+        --md-surface-variant: #E7E0EC;
+        --md-on-surface: #1C1B1F;
+        --md-on-surface-variant: #49454F;
+        --md-outline: #79747E;
+        --md-error: #B3261E;
+        --md-success: #388E3C;
+        --status-todo: #79747E;
+        --status-progress: #1976D2;
+        --status-done: #388E3C;
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 28px;
+    }
     
-    /* Task Card */
+    /* ===================================
+       Global Styles
+       =================================== */
+    .main {
+        background: linear-gradient(135deg, #f5f5f5 0%, #e8e0f0 100%);
+    }
+    
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #6750A4 0%, #7B1FA2 100%);
+    }
+    
+    [data-testid="stSidebar"] * {
+        color: white !important;
+    }
+    
+    [data-testid="stSidebar"] .stRadio label {
+        background: rgba(255,255,255,0.1);
+        border-radius: var(--radius-md);
+        padding: 12px 16px;
+        margin: 4px 0;
+        transition: all 0.2s ease;
+    }
+    
+    [data-testid="stSidebar"] .stRadio label:hover {
+        background: rgba(255,255,255,0.2);
+    }
+    
+    /* ===================================
+       Cards & Containers
+       =================================== */
     .task-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1rem;
-        border-radius: 12px;
-        margin-bottom: 0.5rem;
-        color: white;
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid var(--md-primary);
     }
     
-    /* Status Colors */
-    .status-todo { border-left: 4px solid #79747E; }
-    .status-in_progress { border-left: 4px solid #1976D2; }
-    .status-done { border-left: 4px solid #388E3C; }
-    
-    /* Color Indicators */
-    .color-indicator {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 8px;
+    .task-card:hover {
+        box-shadow: 0 4px 20px rgba(103, 80, 164, 0.15);
+        transform: translateY(-2px);
     }
     
-    /* Hide Streamlit elements */
+    .project-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+    }
+    
+    .project-card:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    
+    .idea-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+    }
+    
+    .idea-card:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+    
+    /* ===================================
+       Buttons
+       =================================== */
+    .stButton > button {
+        background: var(--md-primary) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: var(--radius-xl) !important;
+        padding: 12px 24px !important;
+        font-weight: 500 !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stButton > button:hover {
+        background: #5a4494 !important;
+        box-shadow: 0 4px 12px rgba(103, 80, 164, 0.3) !important;
+        transform: translateY(-1px) !important;
+    }
+    
+    /* ===================================
+       Form Elements
+       =================================== */
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea,
+    .stSelectbox > div > div {
+        border-radius: var(--radius-md) !important;
+        border-color: var(--md-outline) !important;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stTextArea > div > div > textarea:focus {
+        border-color: var(--md-primary) !important;
+        box-shadow: 0 0 0 2px rgba(103, 80, 164, 0.2) !important;
+    }
+    
+    /* ===================================
+       Expander
+       =================================== */
+    .streamlit-expanderHeader {
+        background: linear-gradient(135deg, var(--md-primary), #7B1FA2) !important;
+        color: white !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 16px !important;
+        font-weight: 500 !important;
+    }
+    
+    .streamlit-expanderContent {
+        background: white !important;
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
+        padding: 20px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    }
+    
+    /* ===================================
+       Metrics
+       =================================== */
+    [data-testid="stMetricValue"] {
+        font-size: 2.5rem !important;
+        font-weight: 700 !important;
+        background: linear-gradient(135deg, var(--md-primary), #7B1FA2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    [data-testid="metric-container"] {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    /* ===================================
+       Tabs
+       =================================== */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background: var(--md-surface-variant);
+        border-radius: var(--radius-lg);
+        padding: 8px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: var(--radius-md);
+        padding: 12px 24px;
+        font-weight: 500;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: var(--md-primary) !important;
+        color: white !important;
+    }
+    
+    /* ===================================
+       Hide Default Elements
+       =================================== */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+    header {visibility: hidden;}
     
-    /* Metrics */
-    [data-testid="stMetricValue"] {
-        font-size: 2rem;
-        color: #6750A4;
+    /* ===================================
+       Status Colors
+       =================================== */
+    .status-todo { border-left-color: var(--status-todo) !important; }
+    .status-in_progress { border-left-color: var(--status-progress) !important; }
+    .status-done { border-left-color: var(--status-done) !important; }
+    
+    /* ===================================
+       Animations
+       =================================== */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .stMarkdown, .element-container {
+        animation: fadeIn 0.3s ease;
+    }
+    
+    /* ===================================
+       Login Page
+       =================================== */
+    .auth-container {
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 40px;
+        background: white;
+        border-radius: var(--radius-xl);
+        box-shadow: 0 8px 32px rgba(103, 80, 164, 0.15);
+    }
+    
+    .auth-logo {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+    
+    .auth-logo h1 {
+        background: linear-gradient(135deg, var(--md-primary), #7B1FA2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 2.5rem;
+        font-weight: 700;
     }
 </style>
 """, unsafe_allow_html=True)
