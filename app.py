@@ -33,6 +33,22 @@ def serve_static(path):
     return send_from_directory('static', path)
 
 if __name__ == '__main__':
+    import socket
+    
+    # ローカルIPアドレスを取得
+    def get_local_ip():
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception:
+            return "localhost"
+    
+    local_ip = get_local_ip()
     print("Todo App Server starting...")
-    print("Open http://localhost:5000 in your browser")
-    app.run(debug=True, port=5000)
+    print(f"Local:   http://localhost:5000")
+    print(f"Network: http://{local_ip}:5000")
+    print("Smartphone: Connect to the same Wi-Fi and open the Network URL")
+    app.run(debug=True, host='0.0.0.0', port=5000)

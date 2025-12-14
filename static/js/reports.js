@@ -1,5 +1,6 @@
 /**
  * Reports Module for DevTodo
+ * Using Supabase Cloud Database
  */
 
 let weeklyChart = null;
@@ -8,9 +9,7 @@ let monthlyChart = null;
 // 週次レポートを読み込み
 async function loadWeeklyReport() {
     try {
-        const response = await fetch('/api/reports/weekly');
-        const data = await response.json();
-
+        const data = await supabase.getWeeklyReport();
         renderWeeklyReport(data);
     } catch (error) {
         console.error('Error loading weekly report:', error);
@@ -21,14 +20,7 @@ async function loadWeeklyReport() {
 // 月次レポートを読み込み
 async function loadMonthlyReport(year, month) {
     try {
-        let url = '/api/reports/monthly';
-        if (year && month) {
-            url += `?year=${year}&month=${month}`;
-        }
-
-        const response = await fetch(url);
-        const data = await response.json();
-
+        const data = await supabase.getMonthlyReport(year, month);
         renderMonthlyReport(data);
     } catch (error) {
         console.error('Error loading monthly report:', error);

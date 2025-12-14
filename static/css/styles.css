@@ -1200,3 +1200,112 @@ body {
     background: rgba(0, 0, 0, 0.2);
     border-color: rgba(255, 255, 255, 0.1);
 }
+
+/* ===================================
+   Authentication Styles
+   =================================== */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--md-primary) 0%, var(--md-secondary) 100%);
+    padding: var(--spacing-lg);
+}
+
+.auth-card {
+    background: var(--md-surface);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-xl);
+    width: 100%;
+    max-width: 400px;
+    box-shadow: var(--elevation-4);
+    text-align: center;
+}
+
+.auth-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.auth-logo .material-icons {
+    font-size: 48px;
+    color: var(--md-primary);
+}
+
+.auth-logo h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--md-primary), var(--md-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-subtitle {
+    color: var(--md-on-surface-variant);
+    margin-bottom: var(--spacing-lg);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.auth-form .form-group {
+    text-align: left;
+}
+
+.btn-block {
+    width: 100%;
+    padding: var(--spacing-md);
+}
+
+.auth-switch {
+    margin-top: var(--spacing-md);
+}
+
+.auth-message {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    display: none;
+}
+
+.auth-message.error {
+    display: block;
+    background: var(--md-error-container);
+    color: var(--md-on-error-container);
+}
+
+.auth-message.success {
+    display: block;
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+[data-theme="dark"] .auth-message.success {
+    background: #1b5e20;
+    color: #c8e6c9;
+}
+
+/* User Email Display */
+.user-email {
+    font-size: 0.75rem;
+    color: var(--md-on-surface-variant);
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .user-email {
+        display: none;
+    }
+}

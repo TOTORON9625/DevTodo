@@ -1,9 +1,7 @@
 /**
  * Main Application Logic for DevTodo
+ * Using Supabase Cloud Database with Authentication
  */
-
-// API Base URL
-const API_BASE = '/api';
 
 // Current state
 let currentView = 'tasks';
@@ -19,9 +17,22 @@ let allIdeas = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
-    initEventListeners();
-    loadInitialData();
+    initAuthEventListeners();
+    checkAuthState();
+    registerServiceWorker();
 });
+
+// Service Workerを登録
+async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('Service Worker registered:', registration.scope);
+        } catch (error) {
+            console.log('Service Worker registration failed:', error);
+        }
+    }
+}
 
 function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'light';
@@ -36,9 +47,131 @@ function updateThemeIcon(theme) {
     }
 }
 
+// ===================================
+// Authentication
+// ===================================
+
+function initAuthEventListeners() {
+    // Login form
+    document.getElementById('loginForm').onsubmit = handleLogin;
+
+    // Signup form
+    document.getElementById('signupForm').onsubmit = handleSignup;
+
+    // Toggle between login and signup
+    document.getElementById('showSignup').onclick = () => {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('signupForm').style.display = 'flex';
+        document.getElementById('showSignup').style.display = 'none';
+        document.getElementById('showLogin').style.display = 'inline-flex';
+        clearAuthMessage();
+    };
+
+    document.getElementById('showLogin').onclick = () => {
+        document.getElementById('loginForm').style.display = 'flex';
+        document.getElementById('signupForm').style.display = 'none';
+        document.getElementById('showSignup').style.display = 'inline-flex';
+        document.getElementById('showLogin').style.display = 'none';
+        clearAuthMessage();
+    };
+}
+
+function checkAuthState() {
+    if (supabase.isAuthenticated()) {
+        showApp();
+    } else {
+        showAuth();
+    }
+}
+
+function showAuth() {
+    document.getElementById('authContainer').style.display = 'flex';
+    document.getElementById('appContainer').style.display = 'none';
+}
+
+function showApp() {
+    document.getElementById('authContainer').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'flex';
+
+    // Display user email
+    const user = supabase.getUser();
+    if (user) {
+        document.getElementById('userEmail').textContent = user.email;
+    }
+
+    // Initialize app
+    initEventListeners();
+    loadInitialData();
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+        showAuthMessage('ログイン中...', 'info');
+        await supabase.signIn(email, password);
+        showApp();
+    } catch (error) {
+        showAuthMessage(error.message, 'error');
+    }
+}
+
+async function handleSignup(e) {
+    e.preventDefault();
+
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPassword').value;
+    const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
+
+    if (password !== passwordConfirm) {
+        showAuthMessage('パスワードが一致しません', 'error');
+        return;
+    }
+
+    try {
+        showAuthMessage('アカウント作成中...', 'info');
+        const result = await supabase.signUp(email, password);
+
+        if (result.needsConfirmation) {
+            showAuthMessage('確認メールを送信しました。メールを確認してアカウントを有効化してください。', 'success');
+        } else {
+            showApp();
+        }
+    } catch (error) {
+        showAuthMessage(error.message, 'error');
+    }
+}
+
+function showAuthMessage(message, type) {
+    const msgEl = document.getElementById('authMessage');
+    msgEl.textContent = message;
+    msgEl.className = 'auth-message';
+    if (type) {
+        msgEl.classList.add(type);
+    }
+}
+
+function clearAuthMessage() {
+    const msgEl = document.getElementById('authMessage');
+    msgEl.textContent = '';
+    msgEl.className = 'auth-message';
+}
+
+async function handleLogout() {
+    await supabase.signOut();
+    showAuth();
+    showSnackbar('ログアウトしました');
+}
+
 function initEventListeners() {
     // Theme toggle
     document.getElementById('themeToggle').onclick = toggleTheme;
+
+    // Logout
+    document.getElementById('logoutBtn').onclick = handleLogout;
 
     // Menu toggle (mobile)
     document.getElementById('menuBtn').onclick = toggleSidebar;
@@ -99,12 +232,17 @@ function initEventListeners() {
 }
 
 async function loadInitialData() {
-    await Promise.all([
-        loadProjects(),
-        loadTags(),
-        loadTasks(),
-        loadIdeas()
-    ]);
+    try {
+        await Promise.all([
+            loadProjects(),
+            loadTags(),
+            loadTasks(),
+            loadIdeas()
+        ]);
+    } catch (error) {
+        console.error('Error loading initial data:', error);
+        showSnackbar('データの読み込みに失敗しました。Supabaseの設定を確認してください。');
+    }
 }
 
 // ===================================
@@ -212,13 +350,12 @@ function filterByTag(tagId) {
 }
 
 // ===================================
-// Tasks CRUD
+// Tasks CRUD (Supabase)
 // ===================================
 
 async function loadTasks() {
     try {
-        const response = await fetch(`${API_BASE}/tasks`);
-        allTasks = await response.json();
+        allTasks = await supabase.getTasks();
         renderTasks();
     } catch (error) {
         console.error('Error loading tasks:', error);
@@ -275,12 +412,7 @@ async function toggleTaskStatus(taskId, checked) {
     const status = checked ? 'done' : 'todo';
 
     try {
-        await fetch(`${API_BASE}/tasks/${taskId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status })
-        });
-
+        await supabase.updateTask(taskId, { status });
         await loadTasks();
         showSnackbar(checked ? 'タスクを完了しました' : 'タスクを未完了に戻しました');
     } catch (error) {
@@ -339,8 +471,7 @@ function openTaskModal(task = null) {
 
 async function editTask(taskId) {
     try {
-        const response = await fetch(`${API_BASE}/tasks/${taskId}`);
-        const task = await response.json();
+        const task = await supabase.getTask(taskId);
         openTaskModal(task);
     } catch (error) {
         console.error('Error loading task:', error);
@@ -364,18 +495,10 @@ async function handleTaskSubmit(e) {
 
     try {
         if (taskId) {
-            await fetch(`${API_BASE}/tasks/${taskId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            await supabase.updateTask(taskId, data);
             showSnackbar('タスクを更新しました');
         } else {
-            await fetch(`${API_BASE}/tasks`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            await supabase.createTask(data);
             showSnackbar('タスクを作成しました');
         }
 
@@ -396,7 +519,7 @@ function confirmDeleteTask(taskId) {
 
 async function deleteTask(taskId) {
     try {
-        await fetch(`${API_BASE}/tasks/${taskId}`, { method: 'DELETE' });
+        await supabase.deleteTask(taskId);
         closeModal('confirmModal');
         await loadTasks();
         await loadProjects();
@@ -408,13 +531,12 @@ async function deleteTask(taskId) {
 }
 
 // ===================================
-// Projects CRUD
+// Projects CRUD (Supabase)
 // ===================================
 
 async function loadProjects() {
     try {
-        const response = await fetch(`${API_BASE}/projects`);
-        allProjects = await response.json();
+        allProjects = await supabase.getProjects();
         renderProjects();
     } catch (error) {
         console.error('Error loading projects:', error);
@@ -464,18 +586,10 @@ async function handleProjectSubmit(e) {
 
     try {
         if (projectId) {
-            await fetch(`${API_BASE}/projects/${projectId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            await supabase.updateProject(projectId, data);
             showSnackbar('プロジェクトを更新しました');
         } else {
-            await fetch(`${API_BASE}/projects`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            await supabase.createProject(data);
             showSnackbar('プロジェクトを作成しました');
         }
 
@@ -489,8 +603,7 @@ async function handleProjectSubmit(e) {
 
 async function editProject(projectId) {
     try {
-        const response = await fetch(`${API_BASE}/projects/${projectId}`);
-        const project = await response.json();
+        const project = await supabase.getProject(projectId);
         openProjectModal(project);
     } catch (error) {
         console.error('Error loading project:', error);
@@ -506,7 +619,7 @@ function confirmDeleteProject(projectId) {
 
 async function deleteProject(projectId) {
     try {
-        await fetch(`${API_BASE}/projects/${projectId}`, { method: 'DELETE' });
+        await supabase.deleteProject(projectId);
         closeModal('confirmModal');
         await loadProjects();
         await loadTasks();
@@ -518,13 +631,12 @@ async function deleteProject(projectId) {
 }
 
 // ===================================
-// Tags CRUD
+// Tags CRUD (Supabase)
 // ===================================
 
 async function loadTags() {
     try {
-        const response = await fetch(`${API_BASE}/tags`);
-        allTags = await response.json();
+        allTags = await supabase.getTags();
         renderTags();
     } catch (error) {
         console.error('Error loading tags:', error);
@@ -572,18 +684,10 @@ async function handleTagSubmit(e) {
 
     try {
         if (tagId) {
-            await fetch(`${API_BASE}/tags/${tagId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            await supabase.updateTag(tagId, data);
             showSnackbar('タグを更新しました');
         } else {
-            await fetch(`${API_BASE}/tags`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            await supabase.createTag(data);
             showSnackbar('タグを作成しました');
         }
 
@@ -597,8 +701,7 @@ async function handleTagSubmit(e) {
 
 async function editTag(tagId) {
     try {
-        const response = await fetch(`${API_BASE}/tags/${tagId}`);
-        const tag = await response.json();
+        const tag = await supabase.getTag(tagId);
         openTagModal(tag);
     } catch (error) {
         console.error('Error loading tag:', error);
@@ -614,7 +717,7 @@ function confirmDeleteTag(tagId) {
 
 async function deleteTag(tagId) {
     try {
-        await fetch(`${API_BASE}/tags/${tagId}`, { method: 'DELETE' });
+        await supabase.deleteTag(tagId);
         closeModal('confirmModal');
         await loadTags();
         await loadTasks();
@@ -626,18 +729,12 @@ async function deleteTag(tagId) {
 }
 
 // ===================================
-// Ideas CRUD
+// Ideas CRUD (Supabase)
 // ===================================
 
 async function loadIdeas(search = '') {
     try {
-        let url = `${API_BASE}/ideas`;
-        if (search) {
-            url += `?search=${encodeURIComponent(search)}`;
-        }
-
-        const response = await fetch(url);
-        allIdeas = await response.json();
+        allIdeas = await supabase.getIdeas(search);
         renderIdeas();
     } catch (error) {
         console.error('Error loading ideas:', error);
@@ -685,8 +782,7 @@ function openIdeaModal(idea = null) {
 
 async function editIdea(ideaId) {
     try {
-        const response = await fetch(`${API_BASE}/ideas/${ideaId}`);
-        const idea = await response.json();
+        const idea = await supabase.getIdea(ideaId);
         openIdeaModal(idea);
     } catch (error) {
         console.error('Error loading idea:', error);
@@ -706,18 +802,10 @@ async function handleIdeaSubmit(e) {
 
     try {
         if (ideaId) {
-            await fetch(`${API_BASE}/ideas/${ideaId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            await supabase.updateIdea(ideaId, data);
             showSnackbar('アイデアを更新しました');
         } else {
-            await fetch(`${API_BASE}/ideas`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            await supabase.createIdea(data);
             showSnackbar('アイデアを作成しました');
         }
 
@@ -737,7 +825,7 @@ function confirmDeleteIdea(ideaId) {
 
 async function deleteIdea(ideaId) {
     try {
-        await fetch(`${API_BASE}/ideas/${ideaId}`, { method: 'DELETE' });
+        await supabase.deleteIdea(ideaId);
         closeModal('confirmModal');
         await loadIdeas();
         showSnackbar('アイデアを削除しました');
@@ -749,7 +837,7 @@ async function deleteIdea(ideaId) {
 
 async function convertIdeaToTask(ideaId) {
     try {
-        await fetch(`${API_BASE}/ideas/${ideaId}/convert`, { method: 'POST' });
+        await supabase.convertIdeaToTask(ideaId);
         await loadIdeas();
         await loadTasks();
         showSnackbar('アイデアをタスクに変換しました');
