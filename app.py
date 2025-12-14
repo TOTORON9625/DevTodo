@@ -106,7 +106,7 @@ if __name__ == '__main__':
     
     if DEBUG:
         # 開発モード
-        app.run(debug=True, host=HOST, port=PORT)
+        app.run(debug=True, host=HOST, port=PORT, use_reloader=False)
     else:
         # 本番モード（gunicornなどのWSGIサーバーで実行推奨）
-        app.run(debug=False, host=HOST, port=PORT, threaded=True)
+        app.run(debug=True, host=HOST, port=PORT, use_reloader=False)
