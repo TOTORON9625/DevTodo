@@ -361,6 +361,14 @@ def delete_project(project_id: int):
     supabase = get_supabase()
     supabase.table('projects').delete().eq('id', project_id).execute()
 
+def update_project(project_id: int, name: str, description: str, color: str):
+    supabase = get_supabase()
+    supabase.table('projects').update({
+        'name': name,
+        'description': description,
+        'color': color
+    }).eq('id', project_id).execute()
+
 # Tags
 def get_tags():
     supabase = get_supabase()
@@ -418,6 +426,23 @@ def update_task_status(task_id: int, status: str):
 def delete_task(task_id: int):
     supabase = get_supabase()
     supabase.table('tasks').delete().eq('id', task_id).execute()
+
+def update_task(task_id: int, title: str, description: str, project_id, due_date, color: str, status: str):
+    supabase = get_supabase()
+    data = {
+        'title': title,
+        'description': description,
+        'color': color,
+        'status': status,
+        'project_id': project_id
+    }
+    if due_date:
+        data['due_date'] = str(due_date)
+    else:
+        data['due_date'] = None
+    if status == 'done':
+        data['completed_at'] = datetime.now().isoformat()
+    supabase.table('tasks').update(data).eq('id', task_id).execute()
 
 # Ideas
 def get_ideas(search: str = ""):
@@ -510,12 +535,12 @@ def show_login_page():
                 elif email and password:
                     signup(email, password)
 
-def show_task_card(task):
+def show_task_card(task, projects):
     status_class = f"status-{task['status']}"
     color = task.get('color', '#6750A4')
     
     with st.container():
-        col1, col2, col3 = st.columns([0.5, 8, 1.5])
+        col1, col2, col3, col4 = st.columns([0.5, 7.5, 1, 1])
         
         with col1:
             done = task['status'] == 'done'
@@ -530,17 +555,76 @@ def show_task_card(task):
         
         with col2:
             title_style = "text-decoration: line-through; opacity: 0.6;" if done else ""
+            project_name = ""
+            if task.get('projects') and task['projects'].get('name'):
+                project_name = f"📁 {task['projects']['name']}"
             st.markdown(f"""
                 <div style="border-left: 4px solid {color}; padding-left: 12px;">
                     <strong style="{title_style}">{task['title']}</strong>
                     <br><small style="color: gray;">{task.get('description', '')[:50] if task.get('description') else ''}</small>
+                    <br><small style="color: #6750A4;">{project_name}</small>
                 </div>
             """, unsafe_allow_html=True)
         
         with col3:
+            if st.button("✏️", key=f"edit_task_{task['id']}"):
+                st.session_state[f"editing_task_{task['id']}"] = True
+                st.rerun()
+        
+        with col4:
             if st.button("🗑️", key=f"del_task_{task['id']}"):
                 delete_task(task['id'])
                 st.rerun()
+    
+    # 編集ダイアログ
+    if st.session_state.get(f"editing_task_{task['id']}", False):
+        with st.expander(f"✏️ タスクを編集: {task['title']}", expanded=True):
+            with st.form(f"edit_task_form_{task['id']}"):
+                edit_title = st.text_input("タイトル*", value=task['title'])
+                edit_description = st.text_area("説明", value=task.get('description', '') or '', height=100)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    current_project_id = task.get('project_id')
+                    project_options = [None] + [p['id'] for p in projects]
+                    project_index = 0
+                    if current_project_id in project_options:
+                        project_index = project_options.index(current_project_id)
+                    edit_project_id = st.selectbox(
+                        "プロジェクト",
+                        options=project_options,
+                        index=project_index,
+                        format_func=lambda x: "なし" if x is None else next((p['name'] for p in projects if p['id'] == x), ""),
+                        key=f"edit_project_{task['id']}"
+                    )
+                with col2:
+                    current_due = None
+                    if task.get('due_date'):
+                        current_due = datetime.strptime(task['due_date'], '%Y-%m-%d').date()
+                    edit_due_date = st.date_input("期限", value=current_due, key=f"edit_due_{task['id']}")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    color_names = list(COLORS.keys())
+                    current_color_name = next((k for k, v in COLORS.items() if v == task.get('color', '#6750A4')), 'Purple')
+                    edit_color = st.selectbox("色", options=color_names, index=color_names.index(current_color_name), key=f"edit_color_{task['id']}")
+                with col2:
+                    status_keys = list(STATUS_OPTIONS.keys())
+                    current_status_index = status_keys.index(task['status']) if task['status'] in status_keys else 0
+                    edit_status = st.selectbox("ステータス", options=status_keys, index=current_status_index, format_func=lambda x: STATUS_OPTIONS[x], key=f"edit_status_{task['id']}")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.form_submit_button("💾 保存", use_container_width=True):
+                        if edit_title:
+                            update_task(task['id'], edit_title, edit_description, edit_project_id, edit_due_date, COLORS[edit_color], edit_status)
+                            st.session_state[f"editing_task_{task['id']}"] = False
+                            st.success("タスクを更新しました！")
+                            st.rerun()
+                with col2:
+                    if st.form_submit_button("❌ キャンセル", use_container_width=True):
+                        st.session_state[f"editing_task_{task['id']}"] = False
+                        st.rerun()
 
 def show_tasks_page():
     st.markdown("## 📋 タスク")
@@ -599,7 +683,7 @@ def show_tasks_page():
     
     if tasks:
         for task in tasks:
-            show_task_card(task)
+            show_task_card(task, projects)
     else:
         st.info("タスクがありません。「タスクを追加」から始めましょう！")
 
@@ -623,7 +707,7 @@ def show_projects_page():
     projects = get_projects()
     if projects:
         for project in projects:
-            col1, col2 = st.columns([9, 1])
+            col1, col2, col3 = st.columns([8, 1, 1])
             with col1:
                 color = project.get('color', '#6750A4')
                 st.markdown(f"""
@@ -633,9 +717,37 @@ def show_projects_page():
                     </div>
                 """, unsafe_allow_html=True)
             with col2:
+                if st.button("✏️", key=f"edit_proj_{project['id']}"):
+                    st.session_state[f"editing_project_{project['id']}"] = True
+                    st.rerun()
+            with col3:
                 if st.button("🗑️", key=f"del_proj_{project['id']}"):
                     delete_project(project['id'])
                     st.rerun()
+            
+            # 編集ダイアログ
+            if st.session_state.get(f"editing_project_{project['id']}", False):
+                with st.expander(f"✏️ プロジェクトを編集: {project['name']}", expanded=True):
+                    with st.form(f"edit_project_form_{project['id']}"):
+                        edit_name = st.text_input("プロジェクト名*", value=project['name'])
+                        edit_description = st.text_area("説明", value=project.get('description', '') or '', height=80)
+                        
+                        color_names = list(COLORS.keys())
+                        current_color_name = next((k for k, v in COLORS.items() if v == project.get('color', '#6750A4')), 'Purple')
+                        edit_color = st.selectbox("色", options=color_names, index=color_names.index(current_color_name), key=f"edit_proj_color_{project['id']}")
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.form_submit_button("💾 保存", use_container_width=True):
+                                if edit_name:
+                                    update_project(project['id'], edit_name, edit_description, COLORS[edit_color])
+                                    st.session_state[f"editing_project_{project['id']}"] = False
+                                    st.success("プロジェクトを更新しました！")
+                                    st.rerun()
+                        with col2:
+                            if st.form_submit_button("❌ キャンセル", use_container_width=True):
+                                st.session_state[f"editing_project_{project['id']}"] = False
+                                st.rerun()
     else:
         st.info("プロジェクトがありません")
 
