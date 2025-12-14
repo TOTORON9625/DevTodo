@@ -51,4 +51,4 @@ if __name__ == '__main__':
     print(f"Local:   http://localhost:5000")
     print(f"Network: http://{local_ip}:5000")
     print("Smartphone: Connect to the same Wi-Fi and open the Network URL")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # app.run(debug=True, host='0.0.0.0', port=5000)
